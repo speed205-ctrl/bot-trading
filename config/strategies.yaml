@@ -1,0 +1,103 @@
+trend_pullback_atr:
+  name: "Trend Pullback ATR"
+  description: "Seguimiento de tendencia con entrada en retroceso RSI sobre EMA 200 y salidas dinámicas por ATR."
+  timeframe: 1h
+  direction: long_only
+  default_params:
+    ema_period: 200
+    rsi_period: 14
+    atr_period: 14
+    rsi_oversold: 30
+    rsi_exit: 70
+    atr_sl_mult: 2.0
+    atr_tp_mult: 3.0
+  param_ranges:
+    rsi_oversold: [25, 30, 35, 40]
+    atr_sl_mult: [1.5, 2.0, 2.5, 3.0]
+    atr_tp_mult: [2.0, 3.0, 4.0, 5.0]
+    rsi_exit: [65, 70, 75, 80]
+
+ema_cross_adx:
+  name: "Cruce de EMAs con Filtro ADX"
+  description: "Estrategia de momentum basada en cruce de medias móviles exponenciales con filtro ADX y EMA 200."
+  timeframe: 1h
+  direction: long_only
+  default_params:
+    ema_trend_period: 200
+    adx_period: 14
+    atr_period: 14
+    ema_fast: 9
+    ema_slow: 21
+    adx_threshold: 25
+    atr_sl_mult: 2.0
+    atr_tp_mult: 3.0
+  param_ranges:
+    ema_fast: [7, 9, 12, 15]
+    ema_slow: [18, 21, 25, 30]
+    adx_threshold: [20, 25, 30, 35]
+    atr_sl_mult: [1.5, 2.0, 2.5, 3.0]
+    atr_tp_mult: [2.0, 3.0, 4.0, 5.0]
+
+bollinger_breakout:
+  name: "Breakout de Bandas de Bollinger"
+  description: "Ruptura de volatilidad tras compresión de bandas con confirmación de volumen anormal."
+  timeframe: 1h
+  direction: long_only
+  default_params:
+    bb_period: 20
+    bb_std: 2.0
+    vol_factor: 1.5
+    squeeze_threshold: 1.0
+    bandwidth_tp_mult: 2.0
+    vol_sma_period: 20
+    atr_period: 14
+    atr_sl_mult: 2.0
+  param_ranges:
+    bb_period: [14, 20, 25, 30]
+    bb_std: [1.5, 2.0, 2.5, 3.0]
+    vol_factor: [1.2, 1.5, 2.0, 2.5]
+    squeeze_threshold: [0.5, 1.0, 1.5, 2.0]
+    bandwidth_tp_mult: [1.5, 2.0, 2.5, 3.0]
+
+rsi_mean_reversion:
+  name: "Reversión a la Media con RSI"
+  description: "Entrada en sobreventa extrema a favor de la macro-tendencia (EMA 200) con toma de beneficio al equilibrio."
+  timeframe: 1h
+  direction: long_only
+  default_params:
+    ema_trend_period: 200
+    atr_period: 14
+    rsi_period: 14
+    rsi_oversold: 30
+    rsi_exit: 50
+    atr_sl_mult: 2.0
+    atr_tp_mult: 3.0
+  param_ranges:
+    rsi_period: [7, 10, 14, 21]
+    rsi_oversold: [20, 25, 30, 35]
+    rsi_exit: [45, 50, 55, 60]
+    atr_sl_mult: [1.5, 2.0, 2.5, 3.0]
+    atr_tp_mult: [2.0, 3.0, 4.0, 5.0]
+
+macd_momentum:
+  name: "Momentum MACD con Volumen"
+  description: "Cruce alcista del MACD sobre la línea cero/señal filtrado por tendencia y confirmación de volumen."
+  timeframe: 1h
+  direction: long_only
+  default_params:
+    ema_trend_period: 200
+    vol_sma_period: 20
+    atr_period: 14
+    macd_fast: 12
+    macd_slow: 26
+    macd_signal: 9
+    vol_factor: 1.3
+    atr_sl_mult: 2.0
+    atr_tp_mult: 3.0
+  param_ranges:
+    macd_fast: [8, 10, 12, 16]
+    macd_slow: [21, 24, 26, 31]
+    macd_signal: [7, 9, 11]
+    vol_factor: [1.0, 1.3, 1.6, 2.0]
+    atr_sl_mult: [1.5, 2.0, 2.5, 3.0]
+    atr_tp_mult: [2.0, 3.0, 4.0, 5.0]

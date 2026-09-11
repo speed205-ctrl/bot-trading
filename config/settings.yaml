@@ -1,0 +1,46 @@
+exchange:
+  name: binance
+  trading_mode: futures  # 'spot' or 'futures'
+  pairs:
+    - BTC/USDT
+    - ETH/USDT
+  default_pair: BTC/USDT
+  timeframes:
+    - 15m
+    - 1h
+    - 4h
+  default_timeframe: 1h
+
+backtest:
+  initial_capital: 10000.0
+  commission_rate: 0.0004  # 0.04% commission
+  slippage_pct: 0.0005     # 0.05% slippage
+  default_risk_profile: moderate
+
+data:
+  raw_dir: data/raw
+  processed_dir: data/processed
+  in_sample_start: "2021-01-01"
+  in_sample_end: "2023-12-31"
+  out_of_sample_start: "2024-01-01"
+  out_of_sample_end: "2024-12-31"
+
+optimization:
+  method: grid  # 'grid' or 'random'
+  max_combinations: 100
+  target_metric: profit_factor
+  parallel_jobs: 4
+
+walk_forward:
+  train_months: 6
+  test_months: 2
+  step_months: 2
+
+reports:
+  output_dir: results/reports
+  formats:
+    - console
+    - markdown
+    - json
+    - png
+  detail_level: full

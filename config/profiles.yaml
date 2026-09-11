@@ -1,0 +1,26 @@
+conservative:
+  name: "Perfil Conservador"
+  risk_per_trade_pct: 0.01
+  max_leverage: 5
+  margin_type: isolated
+  max_open_positions: 1
+  max_daily_drawdown_pct: 0.03
+  max_total_drawdown_pct: 0.15
+
+moderate:
+  name: "Perfil Moderado"
+  risk_per_trade_pct: 0.02
+  max_leverage: 10
+  margin_type: isolated
+  max_open_positions: 1
+  max_daily_drawdown_pct: 0.05
+  max_total_drawdown_pct: 0.20
+
+aggressive:
+  name: "Perfil Agresivo"
+  risk_per_trade_pct: 0.04
+  max_leverage: 20
+  margin_type: isolated
+  max_open_positions: 2
+  max_daily_drawdown_pct: 0.08
+  max_total_drawdown_pct: 0.30
