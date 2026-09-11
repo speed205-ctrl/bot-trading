@@ -109,7 +109,20 @@ Ejecuta validación cruzada con ventanas móviles (6 meses entrenamiento / 2 mes
 python main.py walk-forward --strategy trend_pullback_atr
 ```
 
-### 5. Ciclo Completo de Laboratorio (End-to-End)
+### 5. Evaluación y Simulación en Binance Testnet (Sandbox)
+Ejecuta la estrategia en tiempo real sobre datos recientes de Binance Testnet en modo Sandbox (Dry-Run seguro sin riesgo de fondos o con claves de Testnet):
+```bash
+# Simulación Dry-Run con Supertrend en BTC/USDT 1h
+python main.py testnet --strategy supertrend --symbol BTC/USDT
+
+# Evaluación con Donchian Breakout
+python main.py testnet --strategy donchian_breakout --symbol ETH/USDT --timeframe 15m
+
+# Ejecución real en Sandbox Testnet (requiere claves en testnet_config.yaml o variables de entorno)
+python main.py testnet --strategy supertrend --live
+```
+
+### 6. Ciclo Completo de Laboratorio (End-to-End)
 Ejecuta en un solo comando el ciclo completo de investigación: descarga, backtest baseline, optimización in-sample, validación out-of-sample, walk-forward y generación de todos los reportes y gráficos:
 ```bash
 python main.py run-all
@@ -117,7 +130,7 @@ python main.py run-all
 
 ---
 
-## 📈 Las 5 Estrategias Implementadas
+## 📈 Las 11 Estrategias Cuantitativas Implementadas
 
 | ID | Estrategia | Indicadores | Lógica de Entrada | Lógica de Salida |
 | :--- | :--- | :--- | :--- | :--- |
@@ -126,6 +139,13 @@ python main.py run-all
 | `bollinger_breakout` | **Bollinger Breakout** | Bandas Bollinger, SMA Volumen, ATR 14 | Cierre supera banda superior tras compresión de ancho de banda y con volumen anormal | Caída bajo la banda media o SL/TP dinámico |
 | `rsi_mean_reversion` | **Reversión Media RSI** | RSI, EMA 200, ATR 14 | Precio > EMA 200 y rebote desde sobreventa extrema | Retorno de RSI a zona neutral (50) o SL/TP por ATR |
 | `macd_momentum` | **Momentum MACD Volumen** | MACD, Señal MACD, EMA 200, SMA Volumen, ATR 14 | Cruce alcista de MACD sobre línea de señal, Precio > EMA 200 y volumen > promedio | Cruce bajista MACD o SL/TP por ATR |
+| `supertrend` | **Supertrend + Volumen** | Supertrend (10, 3.0), SMA Volumen, ATR 14 | Giro de Supertrend a alcista confirmado por volumen superior al promedio | Giro de Supertrend a bajista o SL dinámico |
+| `donchian_breakout` | **Donchian Breakout (Turtle)** | Donchian 20/10, EMA 200, ATR 14 | Ruptura de máximos de 20 periodos sobre EMA 200 | Ruptura de mínimos de 10 periodos o SL por ATR |
+| `keltner_squeeze` | **Keltner Squeeze Breakout** | Bollinger Bands, Keltner Channels, MACD Hist | Disparo de compresión de volatilidad (Bollinger fuera de Keltner) con momentum alcista | Caída bajo línea central Keltner o SL por ATR |
+| `stoch_rsi` | **Doble Momentum Estocástico + RSI** | RSI 14, Estocástico (14, 3), EMA 200, ATR 14 | Sobreventa sincrónica en RSI y cruce alcista de Estocástico en tendencia macro | Estocástico > 75 o SL/TP por ATR |
+| `vwap_reversion` | **Reversión Media VWAP** | Rolling VWAP 24h, Bandas de Desviación, EMA 200 | Rechazo y cierre por encima de la banda inferior de VWAP en tendencia alcista | Retorno al VWAP medio o banda superior |
+| `triple_ema_ribbon` | **Cinta de Medias Triples** | EMA 8, EMA 21, EMA 55, ATR 14 | Alineación 8 > 21 > 55 y retroceso con rebote en la EMA 21 | EMA 8 cruza bajo EMA 21 o SL/TP por ATR |
+
 
 ---
 

@@ -101,7 +101,7 @@ class ComparativeReportGenerator:
             "strategies": rows
         }
         with open(json_file, "w", encoding="utf-8") as f:
-            json.dump(summary_dict, f, indent=2)
+            json.dump(summary_dict, f, indent=2, default=str)
 
         logger.info(f"Saved comparative report to: {md_file}")
         return summary_dict

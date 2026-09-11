@@ -1,0 +1,13 @@
+# Configuración de Binance Testnet para pruebas en vivo sin riesgo
+testnet:
+  enabled: true
+  market_type: futures  # 'futures' or 'spot'
+  symbol: BTC/USDT
+  timeframe: 1h
+  strategy: supertrend  # Estrategia seleccionada para testnet
+  risk_profile: moderate
+  dry_run: true  # Simula envíos sin requerir claves API reales obligatorias
+
+credentials:
+  api_key: ""     # O variable de entorno BINANCE_TESTNET_API_KEY
+  api_secret: ""  # O variable de entorno BINANCE_TESTNET_SECRET

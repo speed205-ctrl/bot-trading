@@ -123,7 +123,7 @@ class IndividualReportGenerator:
         # Exclude un-serializable objects from JSON dump
         json_dict = {k: v for k, v in report_data.items() if k != "trades"}
         with open(json_file, "w", encoding="utf-8") as f:
-            json.dump(json_dict, f, indent=2)
+            json.dump(json_dict, f, indent=2, default=str)
 
         logger.info(f"Generated report for {result.strategy_name}: {md_file}")
         return report_data

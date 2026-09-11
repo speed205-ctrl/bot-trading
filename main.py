@@ -2,6 +2,13 @@
 import argparse
 import sys
 from pathlib import Path
+
+# Ensure UTF-8 output encoding on Windows terminals
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 import pandas as pd
 from tabulate import tabulate
 
@@ -279,6 +286,14 @@ def main():
     p_wf.add_argument("--timeframe", type=str, default=None, help="Timeframe")
     p_wf.add_argument("--profile", type=str, default="moderate", help="Perfil de riesgo")
 
+    # testnet
+    p_tn = subparsers.add_parser("testnet", help="Evaluar señales y simular/ejecutar en Binance Testnet Sandbox")
+    p_tn.add_argument("--strategy", type=str, default="supertrend", choices=list(STRATEGY_REGISTRY.keys()), help="Estrategia a ejecutar")
+    p_tn.add_argument("--symbol", type=str, default="BTC/USDT", help="Par de trading")
+    p_tn.add_argument("--timeframe", type=str, default="1h", help="Timeframe")
+    p_tn.add_argument("--profile", type=str, default="moderate", help="Perfil de riesgo")
+    p_tn.add_argument("--live", action="store_true", help="Desactivar modo Dry-Run y enviar orden real a Testnet (requiere API keys)")
+
     # run-all
     p_all = subparsers.add_parser("run-all", help="Ejecutar ciclo completo end-to-end de investigación y validación")
     p_all.add_argument("--symbol", type=str, default=None, help="Par de trading")
@@ -294,11 +309,49 @@ def main():
         cmd_optimize(args)
     elif args.command == "walk-forward":
         cmd_walk_forward(args)
+    elif args.command == "testnet":
+        cmd_testnet(args)
     elif args.command == "run-all":
         cmd_run_all(args)
     else:
         parser.print_help()
 
 
+def cmd_testnet(args):
+    """Executes live signal evaluation and testnet simulated/live order execution."""
+    from src.live.testnet_runner import TestnetRunner
+
+    print("================================================================================")
+    print("                 BINANCE TESTNET / SANDBOX RUNNER                               ")
+    print("================================================================================\n")
+
+    dry_run = not args.live
+    mode_label = "DRY RUN (SIMULACIÓN SIN RIESGO)" if dry_run else "TESTNET EN VIVO (ORDEN REAL SANDBOX)"
+    print(f"Modo: {mode_label}")
+    print(f"Estrategia: {args.strategy} | Par: {args.symbol} | TF: {args.timeframe} | Perfil: {args.profile.upper()}\n")
+
+    runner = TestnetRunner(
+        strategy_id=args.strategy,
+        symbol=args.symbol,
+        timeframe=args.timeframe,
+        risk_profile=args.profile,
+        dry_run=dry_run
+    )
+
+    result = runner.evaluate_signals()
+    action_color = "🟢" if "BUY" in result["action"] else ("🔴" if "SELL" in result["action"] else "⚪")
+
+    print(f"⏰ Última vela evaluada: {result['last_timestamp']}")
+    print(f"💲 Precio de cierre actual: ${result['close_price']:,.2f}")
+    print(f"{action_color} Acción generada: {result['action']}")
+    print(f"🛑 Stop Loss sugerido: ${result['stop_loss']:,.2f}")
+    print(f"🎯 Take Profit sugerido: ${result['take_profit']:,.2f}")
+
+    if result["order"]:
+        print(f"\n📦 Detalle de Orden: {result['order']}")
+    print("\n✅ Evaluación de Testnet finalizada.")
+
+
 if __name__ == "__main__":
     main()
+
