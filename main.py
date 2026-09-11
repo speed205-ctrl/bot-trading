@@ -299,6 +299,11 @@ def main():
     p_all.add_argument("--symbol", type=str, default=None, help="Par de trading")
     p_all.add_argument("--timeframe", type=str, default=None, help="Timeframe")
 
+    # dashboard
+    p_dash = subparsers.add_parser("dashboard", help="Iniciar el Dashboard Web Interactivo (FastAPI + Chart.js)")
+    p_dash.add_argument("--host", type=str, default="127.0.0.1", help="Host del servidor (default: 127.0.0.1)")
+    p_dash.add_argument("--port", type=int, default=8000, help="Puerto del servidor (default: 8000)")
+
     args = parser.parse_args()
 
     if args.command == "download":
@@ -313,8 +318,21 @@ def main():
         cmd_testnet(args)
     elif args.command == "run-all":
         cmd_run_all(args)
+    elif args.command == "dashboard":
+        cmd_dashboard(args)
     else:
         parser.print_help()
+
+
+def cmd_dashboard(args):
+    """Starts the interactive web dashboard."""
+    from src.dashboard.server import start_dashboard
+
+    print("================================================================================")
+    print("           INICIANDO DASHBOARD WEB INTERACTIVO - STRATEGY LAB                   ")
+    print(f"           URL: http://{args.host}:{args.port}                                 ")
+    print("================================================================================\n")
+    start_dashboard(host=args.host, port=args.port)
 
 
 def cmd_testnet(args):

@@ -69,6 +69,22 @@ Bot trading/
 
 ---
 
+## 📊 Dashboard Web Interactivo
+
+El proyecto incluye un dashboard interactivo web de grado profesional construido con **FastAPI** y **Chart.js** con diseño dark-mode y glassmorphism:
+
+```bash
+python main.py dashboard
+```
+Accede desde tu navegador a: **`http://localhost:8000`**
+
+El dashboard cuenta con 3 módulos interactivos:
+1. **Matriz Comparativa de Rendimiento:** Ranking en vivo de las 11 estrategias con Profit Factor, Sharpe, Max Drawdown, Retorno y Veredicto cuantitativo.
+2. **Backtest Studio:** Ejecuta simulaciones instantáneas con curvas de equity interactivas, métricas clave (Win Rate, Profit Factor, Sharpe, Sortino, Calmar, VaR 95%) y registro de operaciones.
+3. **Binance Testnet Sandbox:** Escaneo en tiempo real de velas y cálculo de señales de compra/venta con Stop Loss y Take Profit sugeridos, sin arriesgar capital real.
+
+---
+
 ## 💻 Guía de Uso de la Interfaz CLI (`main.py`)
 
 El sistema cuenta con una consola interactiva unificada con comandos directos:
