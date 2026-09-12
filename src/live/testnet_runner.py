@@ -109,3 +109,70 @@ class TestnetRunner:
             "take_profit": tp_price,
             "order": order_executed
         }
+
+    def run_loop(self, poll_interval: int = 60, max_iterations: Optional[int] = None):
+        """Runs continuous real-time execution loop, monitoring candles and managing orders/positions."""
+        import time
+        from datetime import datetime
+
+        logger.info(f"Iniciando bucle de ejecución continua en vivo ({self.symbol} - {self.timeframe})...")
+        logger.info(f"Modo: {'DRY-RUN (Simulación sin riesgo)' if self.dry_run else 'TESTNET EN VIVO'}")
+        logger.info(f"Estrategia: {self.strategy.name} | Intervalo de chequeo: {poll_interval}s")
+
+        active_position: Optional[Dict[str, Any]] = None
+        iteration = 0
+        last_evaluated_timestamp = None
+
+        try:
+            while max_iterations is None or iteration < max_iterations:
+                iteration += 1
+                now_str = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+
+                try:
+                    res = self.evaluate_signals()
+                    close_p = res["close_price"]
+                    candle_ts = res["last_timestamp"]
+
+                    # Check position SL / TP triggers if currently in a trade
+                    if active_position is not None:
+                        entry_p = active_position["entry_price"]
+                        sl_p = active_position["sl"]
+                        tp_p = active_position["tp"]
+                        pnl_pct = ((close_p - entry_p) / entry_p) * 100.0
+
+                        logger.info(f"[POSICION ABIERTA] Entrada: ${entry_p:,.2f} | Actual: ${close_p:,.2f} | PnL: {pnl_pct:+.2f}% | SL: ${sl_p:,.2f} | TP: ${tp_p:,.2f}")
+
+                        if close_p <= sl_p:
+                            logger.warning(f"[STOP LOSS ALCANZADO] Cerrando posición a ${close_p:,.2f} (PnL: {pnl_pct:+.2f}%)")
+                            active_position = None
+                        elif close_p >= tp_p:
+                            logger.info(f"[TAKE PROFIT ALCANZADO] Cerrando posición a ${close_p:,.2f} (PnL: {pnl_pct:+.2f}%)")
+                            active_position = None
+                        elif res["exit_signal"] == 1:
+                            logger.info(f"[SEÑAL DE SALIDA] Estrategia indicó cierre a ${close_p:,.2f} (PnL: {pnl_pct:+.2f}%)")
+                            active_position = None
+                    else:
+                        # No active position: check if entry triggered on a new candle
+                        if res["entry_signal"] == 1 and candle_ts != last_evaluated_timestamp:
+                            logger.info(f"[NUEVA POSICION ABIERTA] Comprando {self.symbol} a ${close_p:,.2f}")
+                            active_position = {
+                                "entry_price": close_p,
+                                "sl": res["stop_loss"],
+                                "tp": res["take_profit"],
+                                "time": candle_ts
+                            }
+                            last_evaluated_timestamp = candle_ts
+                        else:
+                            logger.info(f"[HEARTBEAT {now_str}] {self.symbol}: ${close_p:,.2f} | Señal: {res['action']} | Sin posición activa.")
+
+                except Exception as exc:
+                    logger.error(f"Error en iteración de monitoreo: {exc}")
+
+                if max_iterations is not None and iteration >= max_iterations:
+                    break
+
+                time.sleep(poll_interval)
+
+        except KeyboardInterrupt:
+            logger.info("[DETENIDO] Monitoreo en vivo detenido por el usuario (Ctrl+C).")
+

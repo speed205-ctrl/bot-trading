@@ -17,6 +17,11 @@ def setup_logger(name: str = "StrategyLab", level: int = logging.INFO, log_to_fi
     )
 
     # Console Handler
+    if hasattr(sys.stdout, "reconfigure"):
+        try:
+            sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:
+            pass
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setFormatter(formatter)
     console_handler.setLevel(level)

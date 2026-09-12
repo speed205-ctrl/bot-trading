@@ -293,6 +293,8 @@ def main():
     p_tn.add_argument("--timeframe", type=str, default="1h", help="Timeframe")
     p_tn.add_argument("--profile", type=str, default="moderate", help="Perfil de riesgo")
     p_tn.add_argument("--live", action="store_true", help="Desactivar modo Dry-Run y enviar orden real a Testnet (requiere API keys)")
+    p_tn.add_argument("--loop", action="store_true", help="Dejar el bot corriendo continuamente en bucle en tiempo real")
+    p_tn.add_argument("--interval", type=int, default=60, help="Intervalo en segundos entre chequeos de mercado (default: 60s)")
 
     # run-all
     p_all = subparsers.add_parser("run-all", help="Ejecutar ciclo completo end-to-end de investigación y validación")
@@ -356,18 +358,23 @@ def cmd_testnet(args):
         dry_run=dry_run
     )
 
-    result = runner.evaluate_signals()
-    action_color = "🟢" if "BUY" in result["action"] else ("🔴" if "SELL" in result["action"] else "⚪")
+    if args.loop:
+        print(f"🔄 Modo Bucle Continuo Activo: Chequeando {args.symbol} cada {args.interval} segundos.")
+        print("Presiona Ctrl+C en cualquier momento para detener el bot.\n")
+        runner.run_loop(poll_interval=args.interval)
+    else:
+        result = runner.evaluate_signals()
+        action_color = "🟢" if "BUY" in result["action"] else ("🔴" if "SELL" in result["action"] else "⚪")
 
-    print(f"⏰ Última vela evaluada: {result['last_timestamp']}")
-    print(f"💲 Precio de cierre actual: ${result['close_price']:,.2f}")
-    print(f"{action_color} Acción generada: {result['action']}")
-    print(f"🛑 Stop Loss sugerido: ${result['stop_loss']:,.2f}")
-    print(f"🎯 Take Profit sugerido: ${result['take_profit']:,.2f}")
+        print(f"⏰ Última vela evaluada: {result['last_timestamp']}")
+        print(f"💲 Precio de cierre actual: ${result['close_price']:,.2f}")
+        print(f"{action_color} Acción generada: {result['action']}")
+        print(f"🛑 Stop Loss sugerido: ${result['stop_loss']:,.2f}")
+        print(f"🎯 Take Profit sugerido: ${result['take_profit']:,.2f}")
 
-    if result["order"]:
-        print(f"\n📦 Detalle de Orden: {result['order']}")
-    print("\n✅ Evaluación de Testnet finalizada.")
+        if result["order"]:
+            print(f"\n📦 Detalle de Orden: {result['order']}")
+        print("\n✅ Evaluación de Testnet finalizada.")
 
 
 if __name__ == "__main__":
