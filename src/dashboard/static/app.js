@@ -20,6 +20,10 @@ function switchTab(tabId) {
   if (tabId === "tab-matrix") document.getElementById("btn-tab-matrix").classList.add("active");
   if (tabId === "tab-backtest") document.getElementById("btn-tab-backtest").classList.add("active");
   if (tabId === "tab-testnet") document.getElementById("btn-tab-testnet").classList.add("active");
+  if (tabId === "tab-bot") {
+    document.getElementById("btn-tab-bot").classList.add("active");
+    pollBotTelemetry();
+  }
 }
 
 async function loadStrategies() {
@@ -30,9 +34,11 @@ async function loadStrategies() {
 
     const btSelect = document.getElementById("bt-strategy");
     const tnSelect = document.getElementById("tn-select-strategy");
+    const botSelect = document.getElementById("bot-select-strategy");
 
     btSelect.innerHTML = "";
     tnSelect.innerHTML = "";
+    if (botSelect) botSelect.innerHTML = "";
 
     allStrategies.forEach(s => {
       const opt1 = document.createElement("option");
@@ -44,6 +50,13 @@ async function loadStrategies() {
       opt2.value = s.id;
       opt2.textContent = `${s.name} (${s.id})`;
       tnSelect.appendChild(opt2);
+
+      if (botSelect) {
+        const opt3 = document.createElement("option");
+        opt3.value = s.id;
+        opt3.textContent = `${s.name} (${s.id})`;
+        botSelect.appendChild(opt3);
+      }
     });
 
     document.getElementById("kpi-total-strat").textContent = allStrategies.length;
@@ -339,3 +352,177 @@ async function evaluateTestnetLive() {
     spinner.style.display = "none";
   }
 }
+
+// =========================================================================
+// TAB 4: AUTONOMOUS LIVE BOT CONTROL & TELEMETRY
+// =========================================================================
+
+async function pollBotTelemetry() {
+  try {
+    const res = await fetch("/api/bot/telemetry");
+    if (!res.ok) return;
+    const data = await res.json();
+    updateBotUI(data);
+  } catch (err) {
+    console.error("Error polling bot telemetry:", err);
+  }
+}
+
+function updateBotUI(data) {
+  const isRunning = data.is_running;
+  const startBtn = document.getElementById("btn-bot-start");
+  const stopBtn = document.getElementById("btn-bot-stop");
+  const badge = document.getElementById("bot-status-badge");
+
+  if (isRunning) {
+    startBtn.style.display = "none";
+    stopBtn.style.display = "inline-block";
+    badge.textContent = "🟢 ACTIVO";
+    badge.style.color = "var(--color-green)";
+  } else {
+    startBtn.style.display = "inline-block";
+    stopBtn.style.display = "none";
+    badge.textContent = "⚪ PAUSADO";
+    badge.style.color = "var(--text-dim)";
+  }
+
+  if (data.last_heartbeat) {
+    document.getElementById("bot-heartbeat").textContent = `Latido: ${data.last_heartbeat}`;
+  }
+
+  // Circuit Breaker Status
+  const cb = data.circuit_breaker;
+  const cbStatusEl = document.getElementById("bot-circuit-status");
+  const cbReasonEl = document.getElementById("bot-circuit-reason");
+  if (cb.tripped || cb.is_locked) {
+    cbStatusEl.textContent = "🚨 BLOQUEADO";
+    cbStatusEl.style.color = "var(--color-red)";
+    cbReasonEl.textContent = cb.reason;
+  } else {
+    cbStatusEl.textContent = "🟢 PROTEGIDO";
+    cbStatusEl.style.color = "var(--color-green)";
+    cbReasonEl.textContent = "Límites de riesgo OK";
+  }
+
+  // Daily Performance
+  const daily = data.daily_performance;
+  if (daily) {
+    const dailyPnlEl = document.getElementById("bot-daily-pnl");
+    dailyPnlEl.textContent = `$${daily.total_net_pnl.toFixed(2)}`;
+    dailyPnlEl.style.color = daily.total_net_pnl >= 0 ? "var(--color-green)" : "var(--color-red)";
+    document.getElementById("bot-daily-trades").textContent = `${daily.total_trades} trades hoy (${daily.wins}W / ${daily.losses}L)`;
+  }
+
+  // Active Position Card
+  const pos = data.active_position;
+  const noPosEl = document.getElementById("bot-no-position");
+  const hasPosEl = document.getElementById("bot-has-position");
+  const unrealizedPnlEl = document.getElementById("bot-unrealized-pnl");
+  const unrealizedPctEl = document.getElementById("bot-unrealized-pct");
+
+  if (pos) {
+    noPosEl.style.display = "none";
+    hasPosEl.style.display = "block";
+
+    document.getElementById("pos-symbol-side").textContent = `${pos.symbol} (${pos.side})`;
+    document.getElementById("pos-entry-price").textContent = `$${pos.entry_price.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+    document.getElementById("pos-stop-loss").textContent = `$${pos.stop_loss.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+    document.getElementById("pos-take-profit").textContent = `$${pos.take_profit.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+
+    unrealizedPnlEl.textContent = `$${pos.unrealized_pnl.toFixed(2)}`;
+    unrealizedPnlEl.style.color = pos.unrealized_pnl >= 0 ? "var(--color-green)" : "var(--color-red)";
+    unrealizedPctEl.textContent = `${pos.unrealized_pct >= 0 ? '+' : ''}${pos.unrealized_pct.toFixed(2)}%`;
+    unrealizedPctEl.style.color = pos.unrealized_pct >= 0 ? "var(--color-green)" : "var(--color-red)";
+  } else {
+    noPosEl.style.display = "block";
+    hasPosEl.style.display = "none";
+    unrealizedPnlEl.textContent = "$0.00";
+    unrealizedPnlEl.style.color = "var(--text-main)";
+    unrealizedPctEl.textContent = "+0.00%";
+    unrealizedPctEl.style.color = "var(--text-muted)";
+  }
+
+  // Recent trades table
+  const tbody = document.getElementById("bot-trades-table");
+  if (data.recent_trades && data.recent_trades.length > 0) {
+    tbody.innerHTML = "";
+    data.recent_trades.forEach((t, i) => {
+      const tr = document.createElement("tr");
+      const isWin = t.net_pnl >= 0;
+      tr.innerHTML = `
+        <td style="color: var(--text-dim);">${i + 1}</td>
+        <td style="font-weight: 600;">${t.symbol}</td>
+        <td>${t.strategy_id}</td>
+        <td><span class="badge ${t.side === 'LONG' ? 'badge-pass' : 'badge-fail'}">${t.side}</span></td>
+        <td>$${t.entry_price.toFixed(2)}</td>
+        <td>$${t.exit_price.toFixed(2)}</td>
+        <td style="font-weight: 600; color: ${isWin ? 'var(--color-green)' : 'var(--color-red)'};">$${t.net_pnl.toFixed(2)}</td>
+        <td style="color: ${isWin ? 'var(--color-green)' : 'var(--color-red)'};">${t.return_pct.toFixed(2)}%</td>
+        <td><span style="font-size: 0.75rem; color: var(--text-muted);">${t.exit_reason}</span></td>
+        <td style="font-size: 0.75rem; color: var(--text-muted);">${t.exit_time ? t.exit_time.slice(0, 19) : ''}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+}
+
+async function startBotFromUI() {
+  const strat = document.getElementById("bot-select-strategy").value;
+  const sym = document.getElementById("bot-select-symbol").value;
+  const tf = document.getElementById("bot-select-timeframe").value;
+  const prof = document.getElementById("bot-select-profile").value;
+  const mode = document.getElementById("bot-select-mode").value;
+
+  try {
+    const res = await fetch("/api/bot/start", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        strategy: strat,
+        symbol: sym,
+        timeframe: tf,
+        profile: prof,
+        live: mode === "live_testnet",
+        interval: 15
+      })
+    });
+    const data = await res.json();
+    alert(`🤖 Bot iniciado en modo ${mode === 'live_testnet' ? 'Binance Testnet Real' : 'Dry-Run Simulado'}.`);
+    updateBotUI(data.telemetry);
+  } catch (err) {
+    console.error("Error starting bot:", err);
+    alert("Error al iniciar el bot.");
+  }
+}
+
+async function stopBotFromUI() {
+  try {
+    const res = await fetch("/api/bot/stop", { method: "POST" });
+    const data = await res.json();
+    alert("⏹ Bot pausado exitosamente.");
+    if (data.telemetry) updateBotUI(data.telemetry);
+    else pollBotTelemetry();
+  } catch (err) {
+    console.error("Error stopping bot:", err);
+    alert("Error al pausar el bot.");
+  }
+}
+
+async function panicCloseFromUI() {
+  if (!confirm("⚠️ ¿Estás seguro de ejecutar el CIERRE DE EMERGENCIA? Se cerrarán todas las posiciones abiertas a precio de mercado y se bloquearán nuevas entradas.")) {
+    return;
+  }
+  try {
+    const res = await fetch("/api/bot/panic", { method: "POST" });
+    const data = await res.json();
+    alert(`🚨 Cierre de emergencia completado. Posiciones liquidadas: ${data.closed_positions.length}`);
+    pollBotTelemetry();
+  } catch (err) {
+    console.error("Error triggering panic close:", err);
+    alert("Error al ejecutar cierre de emergencia.");
+  }
+}
+
+// Background telemetry updater
+setInterval(pollBotTelemetry, 3000);
+

@@ -25,9 +25,10 @@
       </div>
 
       <nav class="nav-tabs">
-        <button class="tab-btn active" id="btn-tab-matrix" onclick="switchTab('tab-matrix')">📊 Matriz Comparativa</button>
+        <button class="tab-btn" id="btn-tab-matrix" onclick="switchTab('tab-matrix')">📊 Matriz Comparativa</button>
         <button class="tab-btn" id="btn-tab-backtest" onclick="switchTab('tab-backtest')">🧪 Backtest Studio</button>
         <button class="tab-btn" id="btn-tab-testnet" onclick="switchTab('tab-testnet')">🌐 Binance Testnet</button>
+        <button class="tab-btn" id="btn-tab-bot" onclick="switchTab('tab-bot')">🤖 Bot en Vivo</button>
       </nav>
 
       <div class="live-badge">
@@ -319,6 +320,143 @@
             📝 ESTADO DE EJECUCIÓN SANDBOX:
           </div>
           <pre id="tn-raw-output" style="font-family: monospace; font-size: 0.85rem; color: #38bdf8; overflow-x: auto;">Presiona "Escanear Señal Actual" para consultar Binance Testnet...</pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         TAB 4: BOT AUTÓNOMO EN VIVO (FASE 2)
+         ========================================================================= -->
+    <section id="tab-bot" class="tab-content">
+      <div class="panel">
+        <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+          <div>
+            <h2 class="panel-title">🤖 Bot de Trading Inteligente en Tiempo Real</h2>
+            <p style="color: var(--text-muted); font-size: 0.85rem;">Motor de ejecución autónoma, circuit breakers institucionales y monitoreo 24/7</p>
+          </div>
+          <div style="display: flex; gap: 0.75rem; align-items: center;">
+            <button id="btn-bot-start" class="btn-primary" onclick="startBotFromUI()" style="background: #10b981; border-color: #10b981;">▶ Iniciar Bot</button>
+            <button id="btn-bot-stop" class="btn-secondary" onclick="stopBotFromUI()" style="display: none; border-color: var(--color-amber); color: var(--color-amber);">⏸ Pausar Bot</button>
+            <button id="btn-bot-panic" class="btn-secondary" onclick="panicCloseFromUI()" style="background: rgba(239, 68, 68, 0.2); border-color: var(--color-red); color: var(--color-red); font-weight: 700;">🚨 Cierre de Emergencia</button>
+          </div>
+        </div>
+
+        <!-- Bot Status Bar -->
+        <div class="kpi-grid" style="margin-top: 1rem;">
+          <div class="kpi-card">
+            <span class="kpi-title">Estado del Bot</span>
+            <span class="kpi-value" id="bot-status-badge" style="font-size: 1.3rem; color: var(--text-dim);">INACTIVO</span>
+            <span class="kpi-sub" id="bot-heartbeat">Sin actividad reciente</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-title">PnL No Realizado (En Vivo)</span>
+            <span class="kpi-value" id="bot-unrealized-pnl">$0.00</span>
+            <span class="kpi-sub" id="bot-unrealized-pct">+0.00%</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-title">PnL Realizado Hoy</span>
+            <span class="kpi-value" id="bot-daily-pnl">$0.00</span>
+            <span class="kpi-sub" id="bot-daily-trades">0 operaciones cerradas</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-title">Circuit Breaker</span>
+            <span class="kpi-value" id="bot-circuit-status" style="color: var(--color-green); font-size: 1.3rem;">OK</span>
+            <span class="kpi-sub" id="bot-circuit-reason">Protección de capital activa</span>
+          </div>
+        </div>
+
+        <!-- Bot Configuration Bar -->
+        <div class="form-grid" style="margin-top: 1.5rem; background: var(--bg-card); padding: 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+          <div class="control-group">
+            <label for="bot-select-strategy">Estrategia</label>
+            <select id="bot-select-strategy" class="select-custom"></select>
+          </div>
+          <div class="control-group">
+            <label for="bot-select-symbol">Par</label>
+            <select id="bot-select-symbol" class="select-custom">
+              <option value="BTC/USDT">BTC/USDT</option>
+              <option value="ETH/USDT">ETH/USDT</option>
+            </select>
+          </div>
+          <div class="control-group">
+            <label for="bot-select-timeframe">Timeframe</label>
+            <select id="bot-select-timeframe" class="select-custom">
+              <option value="1h" selected>1h</option>
+              <option value="15m">15m</option>
+              <option value="4h">4h</option>
+            </select>
+          </div>
+          <div class="control-group">
+            <label for="bot-select-profile">Perfil de Riesgo</label>
+            <select id="bot-select-profile" class="select-custom">
+              <option value="moderate" selected>Moderado (2% riesgo)</option>
+              <option value="conservative">Conservador (1% riesgo)</option>
+              <option value="aggressive">Agresivo (4% riesgo)</option>
+            </select>
+          </div>
+          <div class="control-group">
+            <label for="bot-select-mode">Modo</label>
+            <select id="bot-select-mode" class="select-custom">
+              <option value="dry_run" selected>Dry-Run (Simulado sin riesgo)</option>
+              <option value="live_testnet">Binance Testnet Real</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Live Active Position Card -->
+        <div id="bot-position-card" style="margin-top: 1.5rem; background: rgba(56, 189, 248, 0.05); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: var(--radius-md); padding: 1.25rem;">
+          <h3 style="font-size: 1rem; margin-bottom: 0.75rem; color: var(--color-cyan); display: flex; align-items: center; gap: 0.5rem;">
+            <span>📍</span> Posición Abierta Actualmente
+          </h3>
+          <div id="bot-no-position" style="color: var(--text-dim); font-size: 0.9rem;">
+            No hay posiciones abiertas en este momento. El bot está monitoreando el mercado en busca de señales.
+          </div>
+          <div id="bot-has-position" style="display: none;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem;">
+              <div>
+                <span style="font-size: 0.75rem; color: var(--text-muted);">Par & Lado</span>
+                <div id="pos-symbol-side" style="font-weight: 700; font-size: 1.1rem; color: var(--color-green);">BTC/USDT (LONG)</div>
+              </div>
+              <div>
+                <span style="font-size: 0.75rem; color: var(--text-muted);">Precio de Entrada</span>
+                <div id="pos-entry-price" style="font-weight: 600; font-size: 1.1rem;">$0.00</div>
+              </div>
+              <div>
+                <span style="font-size: 0.75rem; color: var(--text-muted);">Stop Loss Dinámico</span>
+                <div id="pos-stop-loss" style="font-weight: 600; font-size: 1.1rem; color: var(--color-red);">$0.00</div>
+              </div>
+              <div>
+                <span style="font-size: 0.75rem; color: var(--text-muted);">Take Profit Dinámico</span>
+                <div id="pos-take-profit" style="font-weight: 600; font-size: 1.1rem; color: var(--color-green);">$0.00</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Trades in DB -->
+        <div style="margin-top: 1.5rem;">
+          <h3 style="font-size: 1rem; margin-bottom: 0.75rem; color: var(--text-main);">📋 Historial de Operaciones Reales (Base de Datos SQLite)</h3>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Par</th>
+                  <th>Estrategia</th>
+                  <th>Lado</th>
+                  <th>Entrada</th>
+                  <th>Salida</th>
+                  <th>PnL Neto ($)</th>
+                  <th>Retorno (%)</th>
+                  <th>Motivo de Salida</th>
+                  <th>Fecha</th>
+                </tr>
+              </thead>
+              <tbody id="bot-trades-table">
+                <tr><td colspan="10" style="text-align: center; color: var(--text-dim); padding: 1.5rem;">Sin operaciones registradas en el historial.</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </section>

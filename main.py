@@ -306,6 +306,15 @@ def main():
     p_dash.add_argument("--host", type=str, default="127.0.0.1", help="Host del servidor (default: 127.0.0.1)")
     p_dash.add_argument("--port", type=int, default=8000, help="Puerto del servidor (default: 8000)")
 
+    # bot
+    p_bot = subparsers.add_parser("bot", help="Iniciar el Bot Autónomo e Inteligente en Vivo (Fase 2)")
+    p_bot.add_argument("--strategy", type=str, default="supertrend", choices=list(STRATEGY_REGISTRY.keys()), help="Estrategia a ejecutar")
+    p_bot.add_argument("--symbol", type=str, default="BTC/USDT", help="Par de trading")
+    p_bot.add_argument("--timeframe", type=str, default="1h", help="Timeframe")
+    p_bot.add_argument("--profile", type=str, default="moderate", help="Perfil de riesgo")
+    p_bot.add_argument("--interval", type=int, default=30, help="Intervalo en segundos entre ciclos de análisis")
+    p_bot.add_argument("--live", action="store_true", help="Operar en Testnet con órdenes reales (por defecto: simulación Dry-Run)")
+
     args = parser.parse_args()
 
     if args.command == "download":
@@ -322,8 +331,43 @@ def main():
         cmd_run_all(args)
     elif args.command == "dashboard":
         cmd_dashboard(args)
+    elif args.command == "bot":
+        cmd_bot(args)
     else:
         parser.print_help()
+
+
+def cmd_bot(args):
+    """Starts the autonomous trading bot from CLI."""
+    import time
+    from src.bot.bot_controller import BotController
+
+    print("================================================================================")
+    print("           INICIANDO BOT AUTÓNOMO INTELIGENTE - FASE 2                         ")
+    print("================================================================================\n")
+    dry_run = not args.live
+    mode_str = "DRY RUN (Simulación en tiempo real sin riesgo)" if dry_run else "TESTNET CON ÓRDENES REALES"
+    print(f"Modo: {mode_str}")
+    print(f"Estrategia: {args.strategy} | Par: {args.symbol} [{args.timeframe}] | Perfil: {args.profile.upper()}")
+    print(f"Intervalo: {args.interval}s | Presiona Ctrl+C para detener de forma segura.\n")
+
+    controller = BotController(
+        strategy_id=args.strategy,
+        symbol=args.symbol,
+        timeframe=args.timeframe,
+        risk_profile=args.profile,
+        dry_run=dry_run,
+        poll_interval=args.interval
+    )
+    controller.start()
+    try:
+        while controller.is_running:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        print("\n⏹ Deteniendo bot...")
+        controller.stop()
+        print("✅ Bot detenido exitosamente.")
+
 
 
 def cmd_dashboard(args):

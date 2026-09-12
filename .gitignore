@@ -14,6 +14,8 @@ data/raw/*
 !data/raw/.gitkeep
 data/processed/*
 !data/processed/.gitkeep
+*.db
+data/*.db
 
 # Results and Plots
 results/backtests/*

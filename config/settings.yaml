@@ -44,3 +44,15 @@ reports:
     - json
     - png
   detail_level: full
+
+live_bot:
+  default_strategy: supertrend
+  default_pair: BTC/USDT
+  default_timeframe: 1h
+  default_risk_profile: moderate
+  poll_interval_seconds: 30
+  mode: testnet  # 'testnet' (sandbox) or 'real'
+  max_daily_drawdown_pct: 0.05
+  db_path: data/bot_state.db
+  enable_trailing_stop: true
+

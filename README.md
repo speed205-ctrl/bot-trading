@@ -144,6 +144,16 @@ Ejecuta en un solo comando el ciclo completo de investigación: descarga, backte
 python main.py run-all
 ```
 
+### 7. Bot de Trading Autónomo e Inteligente en Tiempo Real (Fase 2)
+Ejecuta el bot en vivo con persistencia SQLite, circuit breakers de protección diaria y trailing stop:
+```bash
+# Modo Simulación en Vivo (Dry-Run seguro con datos reales de Binance)
+python main.py bot --strategy supertrend --symbol BTC/USDT --profile moderate --interval 30
+
+# Modo Binance Testnet Real (con claves API en testnet_config.yaml)
+python main.py bot --strategy supertrend --symbol BTC/USDT --live
+```
+
 ---
 
 ## 📈 Las 11 Estrategias Cuantitativas Implementadas

@@ -248,6 +248,101 @@ async def evaluate_testnet_signal(req: TestnetRequest):
     return JSONResponse(content=sanitize_for_json(result))
 
 
+# --- Live Autonomous Bot Endpoints ---
+active_bot: Optional[Any] = None
+
+
+class BotStartRequest(BaseModel):
+    strategy: str = "supertrend"
+    symbol: str = "BTC/USDT"
+    timeframe: str = "1h"
+    profile: str = "moderate"
+    live: bool = False
+    interval: int = 30
+
+
+@app.get("/api/bot/telemetry")
+async def get_bot_telemetry():
+    """Returns live telemetry snapshot of the autonomous trading bot."""
+    global active_bot
+    if active_bot is None:
+        from src.bot.state_manager import StateManager
+        sm = StateManager()
+        daily = sm.get_daily_pnl()
+        recent = sm.get_trade_history(limit=15)
+        active_pos = sm.get_active_position("BTC/USDT")
+        return JSONResponse(content=sanitize_for_json({
+            "is_running": False,
+            "strategy_id": "supertrend",
+            "strategy_name": "Supertrend con Confirmación de Volumen",
+            "symbol": "BTC/USDT",
+            "timeframe": "1h",
+            "dry_run": True,
+            "last_heartbeat": None,
+            "current_price": 0.0,
+            "circuit_breaker": {"tripped": False, "reason": "Bot en pausa / inactivo", "is_locked": False},
+            "active_position": active_pos,
+            "daily_performance": daily,
+            "recent_trades": recent
+        }))
+    return JSONResponse(content=sanitize_for_json(active_bot.get_telemetry()))
+
+
+@app.post("/api/bot/start")
+async def start_live_bot(req: BotStartRequest):
+    """Starts the autonomous trading loop in the background."""
+    global active_bot
+    if active_bot and active_bot.is_running:
+        active_bot.stop()
+
+    from src.bot.bot_controller import BotController
+    active_bot = BotController(
+        strategy_id=req.strategy,
+        symbol=req.symbol,
+        timeframe=req.timeframe,
+        risk_profile=req.profile,
+        dry_run=not req.live,
+        poll_interval=req.interval
+    )
+    active_bot.start()
+    return JSONResponse(content=sanitize_for_json({
+        "status": "started",
+        "telemetry": active_bot.get_telemetry()
+    }))
+
+
+@app.post("/api/bot/stop")
+async def stop_live_bot():
+    """Pauses the autonomous trading bot."""
+    global active_bot
+    if active_bot and active_bot.is_running:
+        active_bot.stop()
+        return JSONResponse(content=sanitize_for_json({
+            "status": "stopped",
+            "telemetry": active_bot.get_telemetry()
+        }))
+    return JSONResponse(content=sanitize_for_json({"status": "already_stopped"}))
+
+
+@app.post("/api/bot/panic")
+async def trigger_emergency_panic():
+    """Panic Button: Locks bot and closes all open positions at market."""
+    global active_bot
+    if active_bot:
+        closed = active_bot.emergency_panic_close()
+        return JSONResponse(content=sanitize_for_json({
+            "status": "emergency_closed",
+            "closed_positions": closed
+        }))
+    from src.bot.execution_engine import ExecutionEngine
+    engine = ExecutionEngine()
+    closed = engine.panic_close_all(dry_run=True)
+    return JSONResponse(content=sanitize_for_json({
+        "status": "emergency_closed",
+        "closed_positions": closed
+    }))
+
+
 def start_dashboard(host: str = "127.0.0.1", port: int = 8000):
     """Launches the Uvicorn server."""
     import uvicorn
