@@ -1,6 +1,7 @@
 """FastAPI server for the Trading Strategy Lab interactive dashboard."""
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+import numpy as np
 import pandas as pd
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -19,6 +20,25 @@ from src.utils.config_loader import config
 from src.utils.logger import setup_logger
 
 logger = setup_logger("DashboardServer")
+
+def sanitize_for_json(obj: Any) -> Any:
+    """Recursively converts numpy and pandas types to native python serializable types."""
+    if isinstance(obj, dict):
+        return {str(k): sanitize_for_json(v) for k, v in obj.items()}
+    elif isinstance(obj, (list, tuple)):
+        return [sanitize_for_json(x) for x in obj]
+    elif isinstance(obj, (np.bool_, bool)):
+        return bool(obj)
+    elif isinstance(obj, (np.integer, int)):
+        return int(obj)
+    elif isinstance(obj, (np.floating, float)):
+        val = float(obj)
+        if np.isnan(val) or np.isinf(val):
+            return 0.0
+        return val
+    elif isinstance(obj, (pd.Timestamp, pd.Timedelta)):
+        return str(obj)
+    return obj
 
 app = FastAPI(title="Laboratorio de Estrategias de Trading - Dashboard", version="1.0.0")
 
@@ -154,7 +174,7 @@ async def run_backtest(req: BacktestRequest):
             "duration_hours": round(t.duration_hours, 1)
         })
 
-    return {
+    response_payload = {
         "strategy_id": req.strategy,
         "strategy_name": result.strategy_name,
         "risk_profile": req.profile,
@@ -168,6 +188,7 @@ async def run_backtest(req: BacktestRequest):
         "trades": trades_log,
         "total_candles": len(df)
     }
+    return JSONResponse(content=sanitize_for_json(response_payload))
 
 
 @app.get("/api/comparative")
@@ -210,7 +231,7 @@ async def get_comparative_matrix(symbol: str = "BTC/USDT", timeframe: str = "1h"
 
     # Sort descending by Profit Factor
     matrix.sort(key=lambda x: x["profit_factor"], reverse=True)
-    return {"strategies": matrix, "symbol": symbol, "timeframe": timeframe, "candles": len(df)}
+    return JSONResponse(content=sanitize_for_json({"strategies": matrix, "symbol": symbol, "timeframe": timeframe, "candles": len(df)}))
 
 
 @app.post("/api/testnet/evaluate")
@@ -224,7 +245,7 @@ async def evaluate_testnet_signal(req: TestnetRequest):
         dry_run=True
     )
     result = runner.evaluate_signals()
-    return result
+    return JSONResponse(content=sanitize_for_json(result))
 
 
 def start_dashboard(host: str = "127.0.0.1", port: int = 8000):

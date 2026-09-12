@@ -142,8 +142,14 @@ async function executeBacktest(e) {
     });
 
     if (!res.ok) {
-      const err = await res.json();
-      alert(`Error en Backtest: ${err.detail || 'Error desconocido'}`);
+      let msg = "Error en el servidor";
+      try {
+        const err = await res.json();
+        msg = err.detail || JSON.stringify(err);
+      } catch (e) {
+        msg = await res.text();
+      }
+      alert(`Error en Backtest: ${msg}`);
       return;
     }
 
@@ -152,7 +158,7 @@ async function executeBacktest(e) {
 
   } catch (err) {
     console.error("Backtest execution failed:", err);
-    alert("Error de conexión al ejecutar backtest.");
+    alert(`Error de conexión al ejecutar backtest: ${err.message || err}`);
   } finally {
     spinner.style.display = "none";
     btn.disabled = false;
