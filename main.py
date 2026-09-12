@@ -292,6 +292,7 @@ def main():
     p_tn.add_argument("--symbol", type=str, default="BTC/USDT", help="Par de trading")
     p_tn.add_argument("--timeframe", type=str, default="1h", help="Timeframe")
     p_tn.add_argument("--profile", type=str, default="moderate", help="Perfil de riesgo")
+    p_tn.add_argument("--capital", type=float, default=10000.0, help="Capital virtual de prueba en dólares (default: $10,000)")
     p_tn.add_argument("--live", action="store_true", help="Desactivar modo Dry-Run y enviar orden real a Testnet (requiere API keys)")
     p_tn.add_argument("--loop", action="store_true", help="Dejar el bot corriendo continuamente en bucle en tiempo real")
     p_tn.add_argument("--interval", type=int, default=60, help="Intervalo en segundos entre chequeos de mercado (default: 60s)")
@@ -312,6 +313,7 @@ def main():
     p_bot.add_argument("--symbol", type=str, default="BTC/USDT", help="Par de trading")
     p_bot.add_argument("--timeframe", type=str, default="1h", help="Timeframe")
     p_bot.add_argument("--profile", type=str, default="moderate", help="Perfil de riesgo")
+    p_bot.add_argument("--capital", type=float, default=10000.0, help="Capital de prueba para el bot (default: $10,000)")
     p_bot.add_argument("--interval", type=int, default=30, help="Intervalo en segundos entre ciclos de análisis")
     p_bot.add_argument("--live", action="store_true", help="Operar en Testnet con órdenes reales (por defecto: simulación Dry-Run)")
 
@@ -356,6 +358,7 @@ def cmd_bot(args):
         symbol=args.symbol,
         timeframe=args.timeframe,
         risk_profile=args.profile,
+        initial_capital=args.capital,
         dry_run=dry_run,
         poll_interval=args.interval
     )

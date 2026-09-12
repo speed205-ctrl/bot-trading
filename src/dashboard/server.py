@@ -257,6 +257,7 @@ class BotStartRequest(BaseModel):
     symbol: str = "BTC/USDT"
     timeframe: str = "1h"
     profile: str = "moderate"
+    initial_capital: float = 10000.0
     live: bool = False
     interval: int = 30
 
@@ -277,6 +278,7 @@ async def get_bot_telemetry():
             "strategy_name": "Supertrend con Confirmación de Volumen",
             "symbol": "BTC/USDT",
             "timeframe": "1h",
+            "capital": 10000.0,
             "dry_run": True,
             "last_heartbeat": None,
             "current_price": 0.0,
@@ -301,6 +303,7 @@ async def start_live_bot(req: BotStartRequest):
         symbol=req.symbol,
         timeframe=req.timeframe,
         risk_profile=req.profile,
+        initial_capital=req.initial_capital,
         dry_run=not req.live,
         poll_interval=req.interval
     )

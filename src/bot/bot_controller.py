@@ -24,6 +24,7 @@ class BotController:
         symbol: str = "BTC/USDT",
         timeframe: str = "1h",
         risk_profile: str = "moderate",
+        initial_capital: float = 10000.0,
         dry_run: bool = True,
         poll_interval: int = 30,
         state_manager: Optional[StateManager] = None,
@@ -33,12 +34,13 @@ class BotController:
         self.strategy = get_strategy(strategy_id)
         self.symbol = symbol
         self.timeframe = timeframe
+        self.initial_capital = initial_capital
         self.dry_run = dry_run
         self.poll_interval = poll_interval
 
         self.state_manager = state_manager or StateManager()
         self.connector = connector or TestnetConnector()
-        self.risk_guard = RiskGuard(risk_profile=risk_profile, state_manager=self.state_manager)
+        self.risk_guard = RiskGuard(risk_profile=risk_profile, state_manager=self.state_manager, base_capital=initial_capital)
         self.execution_engine = ExecutionEngine(connector=self.connector, state_manager=self.state_manager)
         self.notifier = Notifier()
 
@@ -231,6 +233,7 @@ class BotController:
             "strategy_name": self.strategy.name,
             "symbol": self.symbol,
             "timeframe": self.timeframe,
+            "capital": self.initial_capital,
             "dry_run": self.dry_run,
             "last_heartbeat": self._last_heartbeat,
             "current_price": current_price,

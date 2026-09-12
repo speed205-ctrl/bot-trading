@@ -317,12 +317,13 @@ async function evaluateTestnetLive() {
   const sym = document.getElementById("tn-select-symbol").value;
   const tf = document.getElementById("tn-select-timeframe").value;
   const prof = document.getElementById("tn-select-profile").value;
+  const cap = parseFloat(document.getElementById("tn-input-capital") ? document.getElementById("tn-input-capital").value : 10000);
 
   try {
     const res = await fetch("/api/testnet/evaluate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ strategy: strat, symbol: sym, timeframe: tf, profile: prof })
+      body: JSON.stringify({ strategy: strat, symbol: sym, timeframe: tf, profile: prof, capital: cap })
     });
 
     const data = await res.json();
@@ -472,6 +473,7 @@ async function startBotFromUI() {
   const tf = document.getElementById("bot-select-timeframe").value;
   const prof = document.getElementById("bot-select-profile").value;
   const mode = document.getElementById("bot-select-mode").value;
+  const cap = parseFloat(document.getElementById("bot-input-capital") ? document.getElementById("bot-input-capital").value : 10000);
 
   try {
     const res = await fetch("/api/bot/start", {
@@ -482,6 +484,7 @@ async function startBotFromUI() {
         symbol: sym,
         timeframe: tf,
         profile: prof,
+        initial_capital: cap,
         live: mode === "live_testnet",
         interval: 15
       })
