@@ -1,3 +1,8 @@
+# ====================================================================
+# SEGURIDAD: NUNCA guardes tus claves API privadas en este archivo.
+# Configura las variables de entorno en tu sistema:
+#   BINANCE_TESTNET_API_KEY y BINANCE_TESTNET_SECRET
+# ====================================================================
 # Configuración de Binance Testnet para pruebas en vivo sin riesgo
 testnet:
   enabled: true

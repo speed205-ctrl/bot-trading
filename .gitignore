@@ -39,3 +39,12 @@ htmlcov/
 # OS
 .DS_Store
 Thumbs.db
+
+# Security & Environment Variables
+.env
+.env.*
+*.env
+config/credentials.yaml
+config/secrets.yaml
+*.key
+*.pem
